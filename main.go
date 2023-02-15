@@ -9,11 +9,9 @@ import (
 	"time"
 )
 
-type Choice struct {
+type Group struct {
 	dummy   bool
-	choice1 int
-	choice2 int
-	choice3 int
+	choices []int
 }
 
 type Slot struct {
@@ -22,7 +20,12 @@ type Slot struct {
 }
 
 const (
-	episodes = 100000
+	episodes      = 100000
+	lineSeparator = "\n"
+)
+
+var (
+	penalties = []int{0, -1, -5, -10}
 )
 
 func main() {
@@ -37,36 +40,7 @@ func main() {
 		{7, 4},
 	}
 
-	choices := parseChoices()
-
-	// choices := []Choice{
-	// 	{false, 2, 5, 6},
-	// 	{false, 3, 6, 7},
-	// 	{false, 7, 2, 0},
-	// 	{false, 0, 2, 6},
-	// 	{false, 7, 2, 4},
-	// 	{false, 3, 4, 5},
-	// 	{false, 3, 4, 5},
-	// 	{false, 1, 2, 0},
-	// 	{false, 7, 0, 2},
-	// 	{false, 2, 5, 7},
-	// 	{false, 1, 0, 2},
-	// 	{false, 3, 4, 5},
-	// 	{false, 7, 3, -1},
-	// 	{false, 5, 0, 2},
-	// 	{false, 3, 4, 5},
-	// 	{false, 0, 5, 7},
-	// 	{false, 6, 2, 3},
-	// 	{false, 0, 4, 3},
-	// 	{false, 0, 2, 1},
-	// 	{false, 3, 4, 5},
-	// 	{false, 2, 0, 7},
-	// 	{false, 6, 5, 0},
-	// 	{false, 3, 6, 7},
-	// 	{false, 0, 5, 7},
-	// 	{false, 6, 1, 0},
-	// 	{false, 6, 0, 3},
-	// }
+	groups := parseChoices()
 
 	// rand.Seed(43)
 	rand.Seed(time.Now().UnixNano())
@@ -78,18 +52,19 @@ func main() {
 		}
 	}
 
-	for i := 0; i < len(optionsForRand)-len(choices); i++ {
-		choices = append(choices, Choice{true, 0, 1, 2})
+	lenRealGroups := len(groups)
+	for i := 0; i < len(optionsForRand)-lenRealGroups; i++ {
+		groups = append(groups, Group{true, []int{0, 1, 2}})
 	}
 
-	bestSolution := make([]int, len(choices))
+	bestSolution := make([]int, len(groups))
 	for i := range bestSolution {
 		selected := rand.Intn(len(optionsForRand))
 		bestSolution[i] = optionsForRand[selected]
 		optionsForRand = remove(optionsForRand, selected)
 	}
 
-	bestScore, _, _, _, _ := calcScore(bestSolution, choices)
+	bestScore, _ := calcScore(bestSolution, groups)
 	fmt.Println(bestSolution)
 	fmt.Println(bestScore)
 
@@ -99,7 +74,7 @@ func main() {
 		solution = randSwap(solution)
 		solution = randSwap(solution)
 		solution = randSwap(solution)
-		score, _, _, _, _ := calcScore(solution, choices)
+		score, _ := calcScore(solution, groups)
 		if score > bestScore {
 			bestScore = score
 			bestSolution = solution
@@ -107,59 +82,40 @@ func main() {
 	}
 	fmt.Println(bestSolution)
 	fmt.Println(bestScore)
-	_, first, second, third, none := calcScore(bestSolution, choices)
-	fmt.Printf("First: %d, Second: %d, Third: %d, None: %d\n", first, second, third, none)
+	_, resultSpread := calcScore(bestSolution, groups)
+	fmt.Printf("First: %d, Second: %d, Third: %d, None: %d\n", resultSpread[0], resultSpread[1], resultSpread[2], resultSpread[3])
 }
 
-func parseChoices() []Choice {
-	choices := make([]Choice, 0)
+func parseChoices() []Group {
+	groups := make([]Group, 0)
 	input, err := os.ReadFile("input.txt")
 	if err != nil {
 		panic(err)
 	}
 	inputString := string(input)
-	for _, line := range strings.Split(inputString, "\r\n") {
+	for _, line := range strings.Split(inputString, lineSeparator) {
 		if line[0] == '#' {
 			continue
 		}
-		cs := strings.Split(line, " ")
-		choice := Choice{
+		columns := strings.Split(line, " ")
+		group := Group{
 			dummy: false,
 		}
 
-		if cs[0] == "?" {
-			choice.choice1 = -1
-		} else {
-			singleNumberString := strings.Split(cs[0], "-")[1]
-			singleNumber, _ := strconv.Atoi(singleNumberString)
-			singleNumber /= 4
-			singleNumber -= 1
-			choice.choice1 = singleNumber
+		choices := make([]int, len(columns))
+		for i, column := range columns {
+			if column == "?" {
+				choices[i] = -1
+			} else {
+				singleNumberString := strings.Split(column, "-")[1]
+				singleNumber, _ := strconv.Atoi(singleNumberString)
+				choices[i] = (singleNumber / 4) - 1
+			}
 		}
-
-		if cs[1] == "?" {
-			choice.choice2 = -1
-		} else {
-			singleNumberString := strings.Split(cs[1], "-")[1]
-			singleNumber, _ := strconv.Atoi(singleNumberString)
-			singleNumber /= 4
-			singleNumber -= 1
-			choice.choice2 = singleNumber
-		}
-
-		if cs[2] == "?" {
-			choice.choice3 = -1
-		} else {
-			singleNumberString := strings.Split(cs[2], "-")[1]
-			singleNumber, _ := strconv.Atoi(singleNumberString)
-			singleNumber /= 4
-			singleNumber -= 1
-			choice.choice3 = singleNumber
-		}
-
-		choices = append(choices, choice)
+		group.choices = choices
+		groups = append(groups, group)
 	}
-	return choices
+	return groups
 }
 
 func randSwap(s []int) []int {
@@ -172,31 +128,23 @@ func randSwap(s []int) []int {
 	return s
 }
 
-func calcScore(solution []int, choices []Choice) (int, int, int, int, int) {
+func calcScore(solution []int, groups []Group) (int, []int) {
 	score := 0
-	first := 0
-	second := 0
-	third := 0
-	none := 0
-	for i, choice := range choices {
-		if choice.dummy {
+	resultSpread := make([]int, len(penalties))
+	for i, group := range groups {
+		if group.dummy {
 			continue
 		}
-		if solution[i] == choice.choice1 {
-			score -= 0
-			first += 1
-		} else if solution[i] == choice.choice2 {
-			score -= 1
-			second += 1
-		} else if solution[i] == choice.choice3 {
-			score -= 5
-			third += 1
-		} else {
-			score -= 10
-			none += 1
+		selectedPenalty := len(penalties) - 1
+		for k, choice := range group.choices {
+			if solution[i] == choice {
+				selectedPenalty = k
+			}
 		}
+		score += penalties[selectedPenalty]
+		resultSpread[selectedPenalty] += 1
 	}
-	return score, first, second, third, none
+	return score, resultSpread
 }
 
 func remove(s []int, i int) []int {

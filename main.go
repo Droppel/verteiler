@@ -4,14 +4,17 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
 	episodes      = 1000000
 	lineSeparator = "\r\n"
+	inputname     = "inputforce.txt"
 )
 
 type Group struct {
@@ -42,12 +45,21 @@ type Solution struct {
 }
 
 func (s *Solution) Print(score int) {
-	output := ""
+	output := fmt.Sprintf("Seed: %d\n", seed)
 	for _, slot := range s.occupancy {
 		output += fmt.Sprintln("====================================")
-		output += fmt.Sprintf("GROUP %d\n", slot.id)
+		output += fmt.Sprintf("GROUP %d-%d\n", (slot.id*4 + 1), (slot.id+1)*4)
 		for _, groupId := range s.invAllocation[slot.id] {
-			for _, member := range s.groups[groupId].members {
+			group := s.groups[groupId]
+			choice := -1
+			for i, ch := range group.choices {
+				if ch == group.currentSelection {
+					choice = i + 1
+					break
+				}
+			}
+			output += fmt.Sprintf("%d. Wahl\n", choice)
+			for _, member := range group.members {
 				output += fmt.Sprintln(member)
 			}
 			output += fmt.Sprintln("-------------------------------------")
@@ -78,25 +90,27 @@ func (s *Solution) Copy() Solution {
 var (
 	penalties = []int{0, -1, -5, -100}
 	idCounter = 0
+	seed      int64
 )
 
 func main() {
 	options := []Slot{
 		{0, 24, 0},
 		{1, 24, 0},
-		{2, 24, 0},
+		{2, 20, 0},
 		{3, 24, 0},
 		{4, 24, 0},
 		{5, 24, 0},
-		{6, 24, 0},
-		{7, 24, 0},
+		{6, 18, 0},
+		{7, 20, 0},
 	}
 
 	groups, totalMembers := parseChoices()
 
 	//Init random
-	rand.Seed(43)
-	// rand.Seed(time.Now().UnixNano())
+	seed = time.Now().UnixNano()
+	seed = 1676582312005698000
+	rand.Seed(seed)
 
 	// totalSlots := 0
 	// for _, opt := range options {
@@ -151,7 +165,7 @@ func main() {
 func parseChoices() (GroupList, int) {
 	groups := make([]Group, 0)
 	totalMembers := 0
-	input, err := os.ReadFile("input.txt")
+	input, err := os.ReadFile("inputfiles" + string(filepath.Separator) + inputname)
 	if err != nil {
 		panic(err)
 	}
@@ -218,6 +232,9 @@ func (s *Solution) randSwap() {
 		possibleSwaps = append(possibleSwaps, Swap{slot: s.groups[set[0]].currentSelection, swapParteners: set})
 	}
 
+	if len(possibleSwaps) == 0 {
+		return
+	}
 	choosenSwap := possibleSwaps[rand.Intn(len(possibleSwaps))]
 
 	randGroupSelection := randGroup.currentSelection

@@ -4,90 +4,153 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
-	"time"
+)
+
+const (
+	episodes      = 1000000
+	lineSeparator = "\r\n"
 )
 
 type Group struct {
-	dummy   bool
-	choices []int
+	id               int
+	dummy            bool
+	size             int
+	members          []string
+	choices          []int
+	currentSelection int
 }
+
+type GroupList []Group
+
+func (a GroupList) Len() int           { return len(a) }
+func (a GroupList) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a GroupList) Less(i, j int) bool { return a[i].size > a[j].size }
 
 type Slot struct {
-	id     int
-	amount int
+	id       int
+	capacity int
+	amount   int
 }
 
-const (
-	episodes      = 100000
-	lineSeparator = "\n"
-)
+type Solution struct {
+	occupancy     []Slot
+	groups        []Group
+	invAllocation map[int][]int
+}
+
+func (s *Solution) Print(score int) {
+	output := ""
+	for _, slot := range s.occupancy {
+		output += fmt.Sprintln("====================================")
+		output += fmt.Sprintf("GROUP %d\n", slot.id)
+		for _, groupId := range s.invAllocation[slot.id] {
+			for _, member := range s.groups[groupId].members {
+				output += fmt.Sprintln(member)
+			}
+			output += fmt.Sprintln("-------------------------------------")
+		}
+	}
+
+	fmt.Print(output)
+	os.WriteFile(fmt.Sprintf("Score%d.txt", score), []byte(output), os.ModeAppend)
+}
+
+func (s *Solution) Copy() Solution {
+	copiedSolution := Solution{
+		occupancy:     make([]Slot, len(s.occupancy)),
+		groups:        make([]Group, len(s.groups)),
+		invAllocation: make(map[int][]int),
+	}
+
+	copy(copiedSolution.occupancy, s.occupancy)
+	copy(copiedSolution.groups, s.groups)
+	for k, v := range s.invAllocation {
+		newArr := make([]int, len(v))
+		copy(newArr, v)
+		copiedSolution.invAllocation[k] = newArr
+	}
+	return copiedSolution
+}
 
 var (
-	penalties = []int{0, -1, -5, -10}
+	penalties = []int{0, -1, -5, -100}
+	idCounter = 0
 )
 
 func main() {
 	options := []Slot{
-		{0, 4},
-		{1, 4},
-		{2, 4},
-		{3, 4},
-		{4, 4},
-		{5, 4},
-		{6, 4},
-		{7, 4},
+		{0, 24, 0},
+		{1, 24, 0},
+		{2, 24, 0},
+		{3, 24, 0},
+		{4, 24, 0},
+		{5, 24, 0},
+		{6, 24, 0},
+		{7, 24, 0},
 	}
 
-	groups := parseChoices()
+	groups, totalMembers := parseChoices()
 
-	// rand.Seed(43)
-	rand.Seed(time.Now().UnixNano())
 	//Init random
-	optionsForRand := make([]int, 0)
-	for _, opt := range options {
-		for i := 0; i < opt.amount; i++ {
-			optionsForRand = append(optionsForRand, opt.id)
+	rand.Seed(43)
+	// rand.Seed(time.Now().UnixNano())
+
+	// totalSlots := 0
+	// for _, opt := range options {
+	// 	totalSlots += opt.capacity
+	// }
+	_ = totalMembers
+	// for i := 0; i < totalSlots-totalMembers; i++ {
+	// 	groups = append(groups, Group{idCounter, true, 1, []string{"dummy"}, []int{-1, -1, -1}})
+	// 	idCounter += 1
+	// }
+
+	bestSolution := Solution{
+		occupancy:     make([]Slot, len(options)),
+		groups:        make([]Group, len(groups)),
+		invAllocation: make(map[int][]int),
+	}
+	copy(bestSolution.occupancy, options)
+	copy(bestSolution.groups, groups)
+	sort.Sort(groups)
+	for _, group := range groups {
+		selected := findPossibleSlot(group.size, bestSolution.occupancy)
+		bestSolution.occupancy[selected].amount += group.size
+		bestSolution.groups[group.id].currentSelection = selected
+		if bestSolution.invAllocation[selected] == nil {
+			bestSolution.invAllocation[selected] = []int{group.id}
+		} else {
+			bestSolution.invAllocation[selected] = append(bestSolution.invAllocation[selected], group.id)
 		}
 	}
 
-	lenRealGroups := len(groups)
-	for i := 0; i < len(optionsForRand)-lenRealGroups; i++ {
-		groups = append(groups, Group{true, []int{0, 1, 2}})
-	}
-
-	bestSolution := make([]int, len(groups))
-	for i := range bestSolution {
-		selected := rand.Intn(len(optionsForRand))
-		bestSolution[i] = optionsForRand[selected]
-		optionsForRand = remove(optionsForRand, selected)
-	}
-
-	bestScore, _ := calcScore(bestSolution, groups)
+	bestScore, _ := calcScore(bestSolution)
 	fmt.Println(bestSolution)
 	fmt.Println(bestScore)
 
 	for i := 0; i < episodes; i++ {
-		solution := make([]int, len(bestSolution))
-		copy(solution, bestSolution)
-		solution = randSwap(solution)
-		solution = randSwap(solution)
-		solution = randSwap(solution)
-		score, _ := calcScore(solution, groups)
+		solution := bestSolution.Copy()
+		solution.randSwap()
+		solution.randSwap()
+		solution.randSwap()
+		score, _ := calcScore(solution)
 		if score > bestScore {
 			bestScore = score
 			bestSolution = solution
 		}
 	}
-	fmt.Println(bestSolution)
+	bestSolution.Print(bestScore)
 	fmt.Println(bestScore)
-	_, resultSpread := calcScore(bestSolution, groups)
+	_, resultSpread := calcScore(bestSolution)
 	fmt.Printf("First: %d, Second: %d, Third: %d, None: %d\n", resultSpread[0], resultSpread[1], resultSpread[2], resultSpread[3])
 }
 
-func parseChoices() []Group {
+func parseChoices() (GroupList, int) {
 	groups := make([]Group, 0)
+	totalMembers := 0
 	input, err := os.ReadFile("input.txt")
 	if err != nil {
 		panic(err)
@@ -97,13 +160,23 @@ func parseChoices() []Group {
 		if line[0] == '#' {
 			continue
 		}
-		columns := strings.Split(line, " ")
-		group := Group{
-			dummy: false,
-		}
+		split := strings.Split(line, "|")
+		membersString := split[0]
+		choicesString := split[1]
+		choicesStringSplit := strings.Split(choicesString, " ")
 
-		choices := make([]int, len(columns))
-		for i, column := range columns {
+		group := Group{
+			id:               idCounter,
+			dummy:            false,
+			members:          strings.Split(membersString, ","),
+			currentSelection: -1,
+		}
+		idCounter += 1
+
+		group.size = len(group.members)
+
+		choices := make([]int, len(choicesStringSplit))
+		for i, column := range choicesStringSplit {
 			if column == "?" {
 				choices[i] = -1
 			} else {
@@ -114,30 +187,81 @@ func parseChoices() []Group {
 		}
 		group.choices = choices
 		groups = append(groups, group)
+		totalMembers += group.size
 	}
-	return groups
+	return groups, totalMembers
 }
 
-func randSwap(s []int) []int {
-	n1 := rand.Intn(len(s))
-	n2 := rand.Intn(len(s))
-
-	t := s[n1]
-	s[n1] = s[n2]
-	s[n2] = t
-	return s
+type Swap struct {
+	slot          int
+	swapParteners []int
 }
 
-func calcScore(solution []int, groups []Group) (int, []int) {
+func (s *Solution) randSwap() {
+	groups := s.groups
+	randGroup := groups[rand.Intn(len(groups))]
+	possibleSwaps := make([]Swap, 0)
+	for i, slot := range s.occupancy {
+		if i == randGroup.currentSelection {
+			continue
+		}
+		if slot.capacity-slot.amount >= randGroup.size {
+			possibleSwaps = append(possibleSwaps, Swap{i, make([]int, 0)})
+			continue
+		}
+
+		solved, set := solveSubsetSum(s, randGroup.size, s.invAllocation[i])
+		if !solved {
+			continue
+		}
+
+		possibleSwaps = append(possibleSwaps, Swap{slot: s.groups[set[0]].currentSelection, swapParteners: set})
+	}
+
+	choosenSwap := possibleSwaps[rand.Intn(len(possibleSwaps))]
+
+	randGroupSelection := randGroup.currentSelection
+	s.groups[randGroup.id].currentSelection = choosenSwap.slot
+
+	//Update invAllocation and Occupancy
+	s.invAllocation[randGroupSelection] = removeElement(s.invAllocation[randGroupSelection], randGroup.id)
+	s.invAllocation[choosenSwap.slot] = append(s.invAllocation[choosenSwap.slot], randGroup.id)
+	s.occupancy[randGroupSelection].amount -= randGroup.size
+	s.occupancy[choosenSwap.slot].amount += randGroup.size
+	for _, setGroupId := range choosenSwap.swapParteners {
+		setGroup := s.groups[setGroupId]
+		s.groups[setGroupId].currentSelection = randGroupSelection
+		s.occupancy[randGroupSelection].amount += setGroup.size
+		s.occupancy[choosenSwap.slot].amount -= setGroup.size
+		s.invAllocation[choosenSwap.slot] = removeElement(s.invAllocation[choosenSwap.slot], setGroupId)
+		s.invAllocation[randGroupSelection] = append(s.invAllocation[randGroupSelection], setGroupId)
+	}
+}
+
+func solveSubsetSum(solution *Solution, sum int, groupIds []int) (bool, []int) {
+	for i, groupId := range groupIds {
+		summand := solution.groups[groupId].size
+		if summand == sum {
+			return true, []int{groupId}
+		}
+		solved, subGroupIds := solveSubsetSum(solution, sum-summand, groupIds[i+1:])
+		if solved {
+			return true, append([]int{groupId}, subGroupIds...)
+		}
+	}
+	return false, []int{}
+}
+
+func calcScore(solution Solution) (int, []int) {
 	score := 0
 	resultSpread := make([]int, len(penalties))
-	for i, group := range groups {
+	for _, group := range solution.groups {
 		if group.dummy {
 			continue
 		}
 		selectedPenalty := len(penalties) - 1
 		for k, choice := range group.choices {
-			if solution[i] == choice {
+			if group.currentSelection == choice {
 				selectedPenalty = k
 			}
 		}
@@ -147,7 +271,34 @@ func calcScore(solution []int, groups []Group) (int, []int) {
 	return score, resultSpread
 }
 
-func remove(s []int, i int) []int {
+func findPossibleSlot(size int, solution []Slot) int {
+	solCopy := make([]Slot, len(solution))
+	copy(solCopy, solution)
+	for {
+		randIndex := rand.Intn(len(solCopy))
+		randSlot := solCopy[randIndex]
+		if size < randSlot.capacity-randSlot.amount {
+			return randSlot.id
+		} else {
+			solCopy = remove(solCopy, randIndex)
+			if len(solCopy) <= 0 {
+				panic("no slots available")
+			}
+		}
+	}
+}
+
+func removeElement[T comparable](s []T, e T) []T {
+	for i, elem := range s {
+		if elem == e {
+			return remove(s, i)
+		}
+	}
+	// return false, s
+	panic("Tried to remove non existant")
+}
+
+func remove[T any](s []T, i int) []T {
 	s[i] = s[len(s)-1]
 	return s[:len(s)-1]
 }

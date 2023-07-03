@@ -10,7 +10,7 @@ type Group struct {
 	Id               int
 	Dummy            bool
 	Size             int
-	Members          []string
+	Members          string
 	Choices          []int
 	CurrentSelection int
 }
@@ -23,6 +23,7 @@ func (a GroupList) Less(i, j int) bool { return a[i].Size > a[j].Size }
 
 type Slot struct {
 	Id       int
+	TimeSlot int
 	Capacity int
 	Amount   int
 }
@@ -33,51 +34,16 @@ type Solution struct {
 	InvAllocation map[int][]int
 }
 
-// func (s *Solution) Verify() bool {
-// 	invAllocation := copyMap(s.InvAllocation)
-// 	for _, slot := range s.Occupancy {
-// 		invAlloc := invAllocation[slot.Id]
-// 		toFill := slot.Capacity
-// 		//Check total sum
-// 		totalsum := 0
-// 		for _, groupId := range invAlloc {
-// 			totalsum += s.Groups[groupId].Size
-// 		}
-// 		if totalsum > toFill {
-// 			return false
-// 		}
-
-// 		//Remove 6s
-// 		for _, groupId := range invAlloc {
-// 			group := s.Groups[groupId]
-// 			if group.Size == 6 {
-// 				toFill -= 6
-// 				invAlloc = removeElement[int](invAlloc, groupId)
-// 			}
-// 		}
-// 	}
-// }
-
-func copyMap(old map[int][]int) map[int][]int {
-	new := make(map[int][]int)
-	for k, v := range old {
-		newArr := make([]int, len(v))
-		copy(newArr, v)
-		new[k] = newArr
-	}
-	return new
-}
-
 func (s *Solution) Print(score int, seed int64) {
 	output := fmt.Sprintf("Seed: %d\n", seed)
 	for _, slot := range s.Occupancy {
 		output += fmt.Sprintln("====================================")
-		output += fmt.Sprintf("GROUP %d-%d Available space: %d\n", (slot.Id*4 + 1), (slot.Id+1)*4, slot.Capacity)
+		output += fmt.Sprintf("GROUP %d Available space: %d\n", slot.Id, slot.Capacity)
 		for _, groupId := range s.InvAllocation[slot.Id] {
 			group := s.Groups[groupId]
 			choice := -1
 			for i, ch := range group.Choices {
-				if ch == group.CurrentSelection {
+				if ch == s.Occupancy[group.CurrentSelection].TimeSlot {
 					choice = i + 1
 					break
 				}

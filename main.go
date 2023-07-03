@@ -10,10 +10,11 @@ import (
 )
 
 const (
-	threads       = 5
+	threads       = 10
 	episodes      = 1000000
 	lineSeparator = "\r\n"
-	inputname     = "inputforce.txt"
+	inputname     = "input.csv"
+	maxgroupsize  = 6
 )
 
 var (
@@ -31,22 +32,50 @@ func main() {
 func calcSeed(threadId int) {
 	for {
 		options := []datastructures.Slot{
-			{Id: 0, Capacity: 24, Amount: 0},
-			{Id: 1, Capacity: 24, Amount: 0},
-			{Id: 2, Capacity: 20, Amount: 0},
-			{Id: 3, Capacity: 24, Amount: 0},
-			{Id: 4, Capacity: 24, Amount: 0},
-			{Id: 5, Capacity: 24, Amount: 0},
-			{Id: 6, Capacity: 18, Amount: 0},
-			{Id: 7, Capacity: 20, Amount: 0},
+			{Id: 0, TimeSlot: 0, Capacity: 6, Amount: 0},
+			{Id: 1, TimeSlot: 0, Capacity: 6, Amount: 0},
+			{Id: 2, TimeSlot: 0, Capacity: 6, Amount: 0},
+			{Id: 3, TimeSlot: 0, Capacity: 6, Amount: 0},
+			{Id: 4, TimeSlot: 1, Capacity: 6, Amount: 0},
+			{Id: 5, TimeSlot: 1, Capacity: 6, Amount: 0},
+			{Id: 6, TimeSlot: 1, Capacity: 6, Amount: 0},
+			{Id: 7, TimeSlot: 1, Capacity: 6, Amount: 0},
+			{Id: 8, TimeSlot: 2, Capacity: 6, Amount: 0},
+			{Id: 9, TimeSlot: 2, Capacity: 6, Amount: 0},
+			{Id: 10, TimeSlot: 2, Capacity: 2, Amount: 0},
+			{Id: 11, TimeSlot: 2, Capacity: 6, Amount: 0},
+			{Id: 12, TimeSlot: 3, Capacity: 6, Amount: 0},
+			{Id: 13, TimeSlot: 3, Capacity: 6, Amount: 0},
+			{Id: 14, TimeSlot: 3, Capacity: 6, Amount: 0},
+			{Id: 15, TimeSlot: 3, Capacity: 6, Amount: 0},
+			{Id: 16, TimeSlot: 4, Capacity: 6, Amount: 0},
+			{Id: 17, TimeSlot: 4, Capacity: 6, Amount: 0},
+			{Id: 18, TimeSlot: 4, Capacity: 6, Amount: 0},
+			{Id: 19, TimeSlot: 4, Capacity: 6, Amount: 0},
+			{Id: 20, TimeSlot: 5, Capacity: 6, Amount: 0},
+			{Id: 21, TimeSlot: 5, Capacity: 6, Amount: 0},
+			{Id: 22, TimeSlot: 5, Capacity: 6, Amount: 0},
+			{Id: 23, TimeSlot: 5, Capacity: 6, Amount: 0},
+			{Id: 24, TimeSlot: 6, Capacity: 6, Amount: 0},
+			{Id: 25, TimeSlot: 6, Capacity: 6, Amount: 0},
+			{Id: 26, TimeSlot: 6, Capacity: 0, Amount: 0},
+			{Id: 27, TimeSlot: 6, Capacity: 6, Amount: 0},
+			{Id: 28, TimeSlot: 7, Capacity: 2, Amount: 0},
+			{Id: 29, TimeSlot: 7, Capacity: 6, Amount: 0},
+			{Id: 30, TimeSlot: 7, Capacity: 6, Amount: 0},
+			{Id: 31, TimeSlot: 7, Capacity: 6, Amount: 0},
 		}
 
-		groups := parser.ParseChoices(inputname, lineSeparator)
+		groups, err := parser.ParseChoices(inputname, lineSeparator, maxgroupsize)
+		if err != nil {
+			fmt.Printf("Failed to parse choices: %v\n", err)
+			return
+		}
 
 		//Init random
 		seed := time.Now().UnixNano()
 		// seed = 1676625230072189000
-		fmt.Printf("%d: Running with seed %d\n", threadId, seed)
+		fmt.Printf("Thread %d: Running with seed %d\n", threadId, seed)
 		rand.Seed(seed)
 
 		bestSolution := datastructures.Solution{
@@ -97,7 +126,7 @@ func calcScore(solution datastructures.Solution) (int, []int) {
 		}
 		selectedPenalty := len(penalties) - 1
 		for k, choice := range group.Choices {
-			if group.CurrentSelection == choice {
+			if solution.Occupancy[group.CurrentSelection].TimeSlot == choice {
 				selectedPenalty = k
 			}
 		}

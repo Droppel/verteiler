@@ -51,9 +51,7 @@ func (s *Solution) Print(score int, seed int64) {
 				}
 			}
 			output += fmt.Sprintf("%d. Wahl\n", choice)
-			for _, member := range group.Members {
-				output += fmt.Sprintln(member)
-			}
+			output += fmt.Sprintln(group.Members)
 			output += fmt.Sprintln("-------------------------------------")
 		}
 	}

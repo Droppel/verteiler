@@ -28,13 +28,37 @@ func readCsvFile(filePath string) ([][]string, error) {
 	return records, nil
 }
 
-func ParseChoices(filename string, lineSeparator string, maxgroupsize int) (genome.GroupList, error) {
-	groups := make([]genome.Group, 0)
+func ParseSlots(filename string) ([]genome.Slot, error) {
+	csv, err := readCsvFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	slots := make([]genome.Slot, 0)
+	for id, slotSettings := range csv {
+		timeslot, _ := strconv.Atoi(slotSettings[0])
+		capacity, _ := strconv.Atoi(slotSettings[1])
+		slot := genome.Slot{
+			Id:       id,
+			TimeSlot: timeslot,
+			Capacity: capacity,
+			Amount:   0,
+		}
+
+		slots = append(slots, slot)
+	}
+
+	return slots, nil
+
+}
+
+func ParseChoices(filename string) (genome.GroupList, error) {
 	records, err := readCsvFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
+	groups := make([]genome.Group, 0)
 	for id, groupSettings := range records[1:] {
 		size, _ := strconv.Atoi(groupSettings[1])
 		group := genome.Group{

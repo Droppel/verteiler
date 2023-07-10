@@ -10,11 +10,10 @@ import (
 )
 
 const (
-	threads       = 1
-	episodes      = 1000000
-	lineSeparator = "\r\n"
-	inputname     = "input.csv"
-	maxgroupsize  = 6
+	threads   = 1
+	episodes  = 1000000
+	inputname = "input.csv"
+	slotname  = "slots.csv"
 )
 
 var (
@@ -23,42 +22,13 @@ var (
 
 func main() {
 
-	options := []genome.Slot{
-		{Id: 0, TimeSlot: 0, Capacity: 6, Amount: 0},
-		{Id: 1, TimeSlot: 0, Capacity: 6, Amount: 0},
-		{Id: 2, TimeSlot: 0, Capacity: 6, Amount: 0},
-		{Id: 3, TimeSlot: 0, Capacity: 6, Amount: 0},
-		{Id: 4, TimeSlot: 1, Capacity: 6, Amount: 0},
-		{Id: 5, TimeSlot: 1, Capacity: 6, Amount: 0},
-		{Id: 6, TimeSlot: 1, Capacity: 6, Amount: 0},
-		{Id: 7, TimeSlot: 1, Capacity: 6, Amount: 0},
-		{Id: 8, TimeSlot: 2, Capacity: 6, Amount: 0},
-		{Id: 9, TimeSlot: 2, Capacity: 6, Amount: 0},
-		{Id: 10, TimeSlot: 2, Capacity: 2, Amount: 0},
-		{Id: 11, TimeSlot: 2, Capacity: 6, Amount: 0},
-		{Id: 12, TimeSlot: 3, Capacity: 6, Amount: 0},
-		{Id: 13, TimeSlot: 3, Capacity: 6, Amount: 0},
-		{Id: 14, TimeSlot: 3, Capacity: 6, Amount: 0},
-		{Id: 15, TimeSlot: 3, Capacity: 6, Amount: 0},
-		{Id: 16, TimeSlot: 4, Capacity: 6, Amount: 0},
-		{Id: 17, TimeSlot: 4, Capacity: 6, Amount: 0},
-		{Id: 18, TimeSlot: 4, Capacity: 6, Amount: 0},
-		{Id: 19, TimeSlot: 4, Capacity: 6, Amount: 0},
-		{Id: 20, TimeSlot: 5, Capacity: 6, Amount: 0},
-		{Id: 21, TimeSlot: 5, Capacity: 6, Amount: 0},
-		{Id: 22, TimeSlot: 5, Capacity: 6, Amount: 0},
-		{Id: 23, TimeSlot: 5, Capacity: 6, Amount: 0},
-		{Id: 24, TimeSlot: 6, Capacity: 6, Amount: 0},
-		{Id: 25, TimeSlot: 6, Capacity: 6, Amount: 0},
-		{Id: 26, TimeSlot: 6, Capacity: 0, Amount: 0},
-		{Id: 27, TimeSlot: 6, Capacity: 6, Amount: 0},
-		{Id: 28, TimeSlot: 7, Capacity: 2, Amount: 0},
-		{Id: 29, TimeSlot: 7, Capacity: 6, Amount: 0},
-		{Id: 30, TimeSlot: 7, Capacity: 6, Amount: 0},
-		{Id: 31, TimeSlot: 7, Capacity: 6, Amount: 0},
+	options, err := parser.ParseSlots(slotname)
+	if err != nil {
+		fmt.Printf("Failed to parse slots: %v\n", err)
+		return
 	}
 
-	groups, err := parser.ParseChoices(inputname, lineSeparator, maxgroupsize)
+	groups, err := parser.ParseChoices(inputname)
 	if err != nil {
 		fmt.Printf("Failed to parse choices: %v\n", err)
 		return

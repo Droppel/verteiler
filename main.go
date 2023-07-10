@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"sort"
 	"time"
-	"verteiler/datastructures"
+	"verteiler/genome"
 	"verteiler/parser"
 )
 
@@ -31,7 +31,7 @@ func main() {
 
 func calcSeed(threadId int) {
 	for {
-		options := []datastructures.Slot{
+		options := []genome.Slot{
 			{Id: 0, TimeSlot: 0, Capacity: 6, Amount: 0},
 			{Id: 1, TimeSlot: 0, Capacity: 6, Amount: 0},
 			{Id: 2, TimeSlot: 0, Capacity: 6, Amount: 0},
@@ -78,9 +78,9 @@ func calcSeed(threadId int) {
 		fmt.Printf("Thread %d: Running with seed %d\n", threadId, seed)
 		rand.Seed(seed)
 
-		bestSolution := datastructures.Solution{
-			Occupancy:     make([]datastructures.Slot, len(options)),
-			Groups:        make([]datastructures.Group, len(groups)),
+		bestSolution := genome.Solution{
+			Occupancy:     make([]genome.Slot, len(options)),
+			Groups:        make([]genome.Group, len(groups)),
 			InvAllocation: make(map[int][]int),
 		}
 		copy(bestSolution.Occupancy, options)
@@ -117,13 +117,10 @@ func calcSeed(threadId int) {
 	}
 }
 
-func calcScore(solution datastructures.Solution) (int, []int) {
+func calcScore(solution genome.Solution) (int, []int) {
 	score := 0
 	resultSpread := make([]int, len(penalties))
 	for _, group := range solution.Groups {
-		if group.Dummy {
-			continue
-		}
 		selectedPenalty := len(penalties) - 1
 		for k, choice := range group.Choices {
 			if solution.Occupancy[group.CurrentSelection].TimeSlot == choice {
@@ -136,8 +133,8 @@ func calcScore(solution datastructures.Solution) (int, []int) {
 	return score, resultSpread
 }
 
-func findPossibleSlot(size int, solution []datastructures.Slot) int {
-	solCopy := make([]datastructures.Slot, len(solution))
+func findPossibleSlot(size int, solution []genome.Slot) int {
+	solCopy := make([]genome.Slot, len(solution))
 	copy(solCopy, solution)
 	for {
 		randIndex := rand.Intn(len(solCopy))
@@ -145,7 +142,7 @@ func findPossibleSlot(size int, solution []datastructures.Slot) int {
 		if size <= randSlot.Capacity-randSlot.Amount {
 			return randSlot.Id
 		} else {
-			solCopy = datastructures.Remove(solCopy, randIndex)
+			solCopy = genome.Remove(solCopy, randIndex)
 			if len(solCopy) <= 0 {
 				panic("no slots available")
 			}

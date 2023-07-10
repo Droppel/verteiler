@@ -1,4 +1,4 @@
-package datastructures
+package genome
 
 import (
 	"fmt"
@@ -6,13 +6,13 @@ import (
 	"os"
 )
 
+// One Group of Students
 type Group struct {
 	Id               int
-	Dummy            bool
-	Size             int
-	Members          string
-	Choices          []int
-	CurrentSelection int
+	Size             int    // Amount of Groupmembers
+	Members          string // Names of Groupmembers
+	Choices          []int  // Groups choices in descending order
+	CurrentSelection int    // Current Timeslot -1 equals no selection
 }
 
 type GroupList []Group
@@ -21,17 +21,19 @@ func (a GroupList) Len() int           { return len(a) }
 func (a GroupList) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a GroupList) Less(i, j int) bool { return a[i].Size > a[j].Size }
 
+// One Available Slot
 type Slot struct {
 	Id       int
-	TimeSlot int
-	Capacity int
-	Amount   int
+	TimeSlot int // Multiple Slots can be "the same" in regards to the times they happen at
+	Capacity int // How many people fit in this slot
+	Amount   int // How many people currently are in this slot
 }
 
+// A possible Solution for the problem
 type Solution struct {
-	Occupancy     []Slot
-	Groups        []Group
-	InvAllocation map[int][]int
+	Occupancy     []Slot        // Which slots exist
+	Groups        []Group       // Which groups exit
+	InvAllocation map[int][]int // For faster lookup a map of slot => list of groups in slot is used
 }
 
 func (s *Solution) Print(score int, seed int64) {

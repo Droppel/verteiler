@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"verteiler/datastructures"
+	"verteiler/genome"
 )
 
 const (
@@ -28,8 +28,8 @@ func readCsvFile(filePath string) ([][]string, error) {
 	return records, nil
 }
 
-func ParseChoices(filename string, lineSeparator string, maxgroupsize int) (datastructures.GroupList, error) {
-	groups := make([]datastructures.Group, 0)
+func ParseChoices(filename string, lineSeparator string, maxgroupsize int) (genome.GroupList, error) {
+	groups := make([]genome.Group, 0)
 	records, err := readCsvFile(filename)
 	if err != nil {
 		return nil, err
@@ -37,9 +37,8 @@ func ParseChoices(filename string, lineSeparator string, maxgroupsize int) (data
 
 	for id, groupSettings := range records[1:] {
 		size, _ := strconv.Atoi(groupSettings[1])
-		group := datastructures.Group{
+		group := genome.Group{
 			Id:               id,
-			Dummy:            false,
 			Members:          groupSettings[2],
 			Size:             size,
 			CurrentSelection: -1,

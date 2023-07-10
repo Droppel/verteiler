@@ -10,6 +10,9 @@ import (
 )
 
 const (
+	randSeed = true
+	seed     = 42
+
 	threads   = 1
 	episodes  = 1000000
 	inputname = "input.csv"
@@ -49,8 +52,10 @@ func calcSeed(threadId int, groupsInput genome.GroupList, optionsInput []genome.
 		copy(options, optionsInput)
 
 		//Init random
-		// seed := time.Now().UnixNano()
-		seed := int64(42)
+		seed := int64(seed)
+		if randSeed {
+			seed = time.Now().UnixNano()
+		}
 		fmt.Printf("Thread %d: Running with seed %d\n", threadId, seed)
 		rand.Seed(seed)
 

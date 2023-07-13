@@ -3,7 +3,6 @@ package genome
 import (
 	"fmt"
 	"math/rand"
-	"os"
 )
 
 // One Group of Students
@@ -36,7 +35,7 @@ type Solution struct {
 	InvAllocation map[int][]int // For faster lookup a map of slot => list of groups in slot is used
 }
 
-func (s *Solution) Print(score int, seed int64) {
+func (s *Solution) ToString(score int, seed int64) string {
 	output := fmt.Sprintf("Seed: %d\n", seed)
 	for _, slot := range s.Occupancy {
 		output += fmt.Sprintln("====================================")
@@ -55,11 +54,7 @@ func (s *Solution) Print(score int, seed int64) {
 			output += fmt.Sprintln("-------------------------------------")
 		}
 	}
-
-	fmt.Print(output)
-	if score >= -20 {
-		os.WriteFile(fmt.Sprintf("scores/Score%d-%d.txt", score, seed), []byte(output), os.ModeAppend)
-	}
+	return output
 }
 
 func (s *Solution) Copy() Solution {

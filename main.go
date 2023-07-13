@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"sort"
 	"time"
 	"verteiler/genome"
@@ -92,7 +93,12 @@ func calcSeed(threadId int, groupsInput genome.GroupList, optionsInput []genome.
 				bestSolution = solution
 			}
 		}
-		bestSolution.Print(bestScore, seed)
+		solutionString := bestSolution.ToString(bestScore, seed)
+
+		fmt.Print(solutionString)
+		if bestScore >= -20 {
+			os.WriteFile(fmt.Sprintf("scores/Score%d-%d.txt", bestScore, seed), []byte(solutionString), os.ModeAppend)
+		}
 		fmt.Println(bestScore)
 		_, resultSpread := calcScore(bestSolution)
 		fmt.Printf("First: %d, Second: %d, Third: %d, None: %d\n", resultSpread[0], resultSpread[1], resultSpread[2], resultSpread[3])

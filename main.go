@@ -110,8 +110,9 @@ func calcScore(solution genome.Solution) (int, []int) {
 	resultSpread := make([]int, len(penalties))
 	for _, group := range solution.Groups {
 		selectedPenalty := len(penalties) - 1
+		currentGroupTimeSlot := solution.Occupancy[group.CurrentSelection].TimeSlot
 		for k, choice := range group.Choices {
-			if solution.Occupancy[group.CurrentSelection].TimeSlot == choice {
+			if choice == -1 || currentGroupTimeSlot == choice {
 				selectedPenalty = k
 			}
 		}

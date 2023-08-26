@@ -142,7 +142,14 @@ func calcSeed(threadId int, groupsInput genome.GroupList, optionsInput []genome.
 
 	// fmt.Print(solutionString)
 	if bestScore >= cutoffForSave {
-		os.WriteFile(fmt.Sprintf("scores/Score%d-%d.txt", bestScore, seed), []byte(solutionString), os.ModeAppend)
+		err := os.MkdirAll("scores", os.ModeAppend)
+		if err != nil {
+			panic(fmt.Errorf("failed to create folder: %w", err))
+		}
+		err = os.WriteFile(fmt.Sprintf("scores/Score%d-%d.txt", bestScore, seed), []byte(solutionString), os.ModeAppend)
+		if err != nil {
+			panic(fmt.Errorf("failed to store files to disk: %w", err))
+		}
 	}
 	output := fmt.Sprintf("Thread %d: Running with seed %d finished:\n", threadId, seed)
 	output += fmt.Sprintf("%v\n", bestScore)

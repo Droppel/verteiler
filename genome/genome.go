@@ -39,7 +39,7 @@ func (s *Solution) ToString(score int, seed int64) string {
 	output := fmt.Sprintf("Seed: %d\n", seed)
 	for _, slot := range s.Occupancy {
 		output += fmt.Sprintln("====================================")
-		output += fmt.Sprintf("GROUP %d Available space: %d\n", slot.Id, slot.Capacity)
+		output += fmt.Sprintf("GROUP %d Available space: %d\n", slot.Id+1, slot.Capacity)
 		for _, groupId := range s.InvAllocation[slot.Id] {
 			group := s.Groups[groupId]
 			choice := -1

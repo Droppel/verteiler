@@ -79,9 +79,9 @@ type Swap struct {
 	swapPartners []int
 }
 
-func (s *Solution) RandSwap() {
+func (s *Solution) RandSwap(randSource *rand.Rand) {
 	groups := s.Groups
-	randGroup := groups[rand.Intn(len(groups))]
+	randGroup := groups[randSource.Intn(len(groups))]
 	possibleSwaps := make([]Swap, 0)
 	for i, slot := range s.Occupancy {
 		if i == randGroup.CurrentSelection {
@@ -103,7 +103,7 @@ func (s *Solution) RandSwap() {
 	if len(possibleSwaps) == 0 {
 		return
 	}
-	choosenSwap := possibleSwaps[rand.Intn(len(possibleSwaps))]
+	choosenSwap := possibleSwaps[randSource.Intn(len(possibleSwaps))]
 
 	randGroupSelection := randGroup.CurrentSelection
 	s.Groups[randGroup.Id].CurrentSelection = choosenSwap.slot

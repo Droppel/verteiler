@@ -60,16 +60,16 @@ func ParseChoices(filename string) (genome.GroupList, error) {
 
 	groups := make([]genome.Group, 0)
 	for id, groupSettings := range records[1:] {
-		size, _ := strconv.Atoi(groupSettings[1])
+		size, _ := strconv.Atoi(groupSettings[2])
 		group := genome.Group{
 			Id:               id,
-			Members:          groupSettings[2],
+			Members:          groupSettings[3],
 			Size:             size,
 			CurrentSelection: -1,
 		}
 
 		choices := make([]int, 3)
-		for i, column := range groupSettings[3:] {
+		for i, column := range groupSettings[4:] {
 			if column == dontCareWord {
 				choices[i] = -1
 			} else {

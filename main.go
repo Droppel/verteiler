@@ -14,10 +14,11 @@ const (
 	randSeed = true
 	seed     = 42
 
-	threads   = 1
-	episodes  = 1000000
-	inputname = "input.csv"
-	slotname  = "slots.csv"
+	threads          = 6
+	episodes         = 100000
+	inputname        = "input.csv"
+	slotname         = "slots.csv"
+	thresholdForSave = -100
 )
 
 var (
@@ -95,13 +96,15 @@ func calcSeed(threadId int, groupsInput genome.GroupList, optionsInput []genome.
 		}
 		solutionString := bestSolution.ToString(bestScore, seed)
 
-		fmt.Print(solutionString)
-		if bestScore >= -20 {
+		// fmt.Print(solutionString)
+		if bestScore >= thresholdForSave {
 			os.WriteFile(fmt.Sprintf("scores/Score%d-%d.txt", bestScore, seed), []byte(solutionString), os.ModeAppend)
 		}
-		fmt.Println(bestScore)
+		output := fmt.Sprintf("Thread %d: Running with seed %d finished:\n", threadId, seed)
+		output += fmt.Sprintf("%v\n", bestScore)
 		_, resultSpread := calcScore(bestSolution)
-		fmt.Printf("First: %d, Second: %d, Third: %d, None: %d\n", resultSpread[0], resultSpread[1], resultSpread[2], resultSpread[3])
+		output += fmt.Sprintf("First: %d, Second: %d, Third: %d, None: %d\n", resultSpread[0], resultSpread[1], resultSpread[2], resultSpread[3])
+		fmt.Println(output)
 	}
 }
 

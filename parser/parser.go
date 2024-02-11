@@ -37,6 +37,7 @@ func ParseSlots(filename string) ([]genome.Slot, error) {
 	slots := make([]genome.Slot, 0)
 	for id, slotSettings := range csv {
 		timeslot, _ := strconv.Atoi(slotSettings[0])
+		timeslot = timeslot - 1
 		capacity, _ := strconv.Atoi(slotSettings[1])
 		slot := genome.Slot{
 			Id:       id,
